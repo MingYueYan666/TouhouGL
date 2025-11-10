@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="keywords" content="东方Project,OpenGL教程,兔子站,同人游戏,东方音乐">
+    <meta name="description" content="兔子站 - 以东方Project为核心的OpenGL教程与同人文化分享平台">
+    <title>兔子站 致永恒的幻想乡</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- AOS 动画库 -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#f472b6',
+                        dark: {
+                            100: '#1e293b',
+                            200: '#0f172a',
+                            300: '#020617'
+                        },
+                        touhou: {
+                            red: '#e63946',
+                            blue: '#1d3557',
+                            green: '#2a9d8f',
+                            yellow: '#f4a261'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        touhou: ['"Noto Serif SC"', 'serif']
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                        'fade-in': 'fadeIn 0.5s ease-in forwards',
+                        'scale': 'scale 0.3s ease-in forwards'
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        scale: {
+                            '0%': { transform: 'scale(0.95)' },
+                            '100%': { transform: 'scale(1)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            }
+
+            .text-shadow-lg {
+                text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
+            }
+
+            .glass {
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .dark .glass {
+                background: rgba(15, 23, 42, 0.7);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .img-loading {
+                background: linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.1) 100%);
+                background-size: 200% 100%;
+                animation: loading 1.5s infinite;
+            }
+
+            .dark .img-loading {
+                background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.05) 100%);
+            }
+
+            @keyframes loading {
+                0% {
+                    background-position: 200% 0;
+                }
+
+                100% {
+                    background-position: -200% 0;
+                }
+            }
+        }
+
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+
+        .dark ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+            .dark ::-webkit-scrollbar-thumb:hover {
+                background: #64748b;
+            }
+
+        /* 背景图片 */
+        body {
+            background-image: url('image/2.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            transition: background-color 0.3s ease;
+        }
+
+        /* 卡片悬停效果 */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+
+        /* 导航栏滚动效果 */
+        .nav-scrolled {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 图片预览模态框 */
+        #image-modal {
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+            #image-modal.active {
+                opacity: 1;
+                visibility: visible;
+            }
+    </style>
+    <!-- 引入思源宋体优化中文显示 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-gray-50 dark:bg-dark-200 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+
+    <!-- 导航栏 -->
+    <nav class="glass sticky top-0 z-50 transition-all duration-300" id="main-nav">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <img src="image/icon.png" alt="兔子站图标" class="w-10 h-10 rounded-full object-cover" loading="lazy">
+                <span class="text-xl font-bold text-primary dark:text-secondary font-touhou">兔子站</span>
+            </div>
+
+            <!-- 桌面端导航 -->
+            <div class="hidden md:flex items-center space-x-4">
+                <a href="#" class="nav-link active">首页</a>
+                <a href="opengl-tutorial.html" class="nav-link">OpenGL教程</a>
+                <a href="music.html" class="nav-link">音乐</a>
+                <a href="gameDownload.html" class="nav-link">下载</a>
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-dark-100 transition-colors">
+                    <i class="fa fa-moon-o dark:hidden" aria-hidden="true"></i>
+                    <i class="fa fa-sun-o hidden dark:block text-yellow-400" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <!-- 移动端菜单按钮 -->
+            <button id="mobile-menu-btn" class="md:hidden p-2 rounded-full hover:bg-gray-200 dark:hover:bg-dark-100 transition-colors">
+                <i class="fa fa-bars" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <!-- 移动端导航菜单 -->
+        <div id="mobile-menu" class="md:hidden glass hidden px-4 py-2 animate-fade-in">
+            <div class="flex flex-col space-y-3 pb-3">
+                <a href="#" class="nav-link mobile-nav-link active py-2">首页</a>
+                <a href="opengl-tutorial.html" class="nav-link mobile-nav-link py-2">OpenGL教程</a>
+                <a href="music.html" class="nav-link mobile-nav-link py-2">音乐</a>
+                <a href="gameDownload.html" class="nav-link mobile-nav-link py-2">下载</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 欢迎区域 -->
+        <section class="mb-12 text-center" data-aos="fade-up">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 text-shadow-lg font-touhou dark:text-white">欢迎来到兔子站</h1>
+            <p class="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-8 text-shadow">致永恒的幻想乡</p>
+            <div class="inline-block animate-float">
+                <img src="image/icon.png" alt="兔子站图标" class="w-24 h-24 rounded-full border-4 border-primary/30 dark:border-secondary/30 shadow-lg" loading="lazy">
+            </div>
+        </section>
+
+        <!-- 网站简介 -->
+        <div class="glass rounded-xl p-6 card-hover mb-12" data-aos="fade-up" data-aos-delay="100">
+            <div class="container">
+                <p class="text-xl max-w-2xl mx-auto opacity-90 dark:text-white">
+                    这里是一个以东方Project为核心的OpenGL教程网站，融合同人文化与技术学习，让热爱与成长并行。
+                </p>
+            </div>
+        </div>
+
+        <!-- 东方Project介绍 -->
+        <section class="mb-16" data-aos="fade-up">
+            <div class="glass rounded-xl p-6 md:p-8 card-hover mb-10">
+                <h2 class="text-3xl font-bold mb-6 text-touhou dark:text-secondary font-touhou">东方Project</h2>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <p class="mb-4 text-lg">
+                            东方Project是日本同人游戏开发者太田顺也（ZUN）开发的一系列弹幕射击游戏为核心，衍生出海量社区同人创作的文化IP统称。
+                        </p>
+                        <p class="mb-4 text-lg">
+                            其覆盖范围遍及全球，涵盖同人游戏、音乐、漫画、动画及程序模组等多元形式，形成了独特的"幻想乡文化圈"。
+                        </p>
+                        <p class="mb-6 text-lg">
+                            开放的二创生态是其生命力的核心——从插画、手书到Cosplay、周边，甚至跨界联动内容，只要源于东方IP的灵感，都能成为文化圈层的一部分。
+                        </p>
+
+                        <!-- 核心数据 -->
+                        <div class="grid grid-cols-3 gap-4 mb-6">
+                            <div class="text-center p-3 glass rounded-lg">
+                                <p class="text-3xl font-bold text-primary dark:text-secondary">20+</p>
+                                <p class="text-sm">核心游戏作品</p>
+                            </div>
+                            <div class="text-center p-3 glass rounded-lg">
+                                <p class="text-3xl font-bold text-primary dark:text-secondary">100+</p>
+                                <p class="text-sm">经典角色</p>
+                            </div>
+                            <div class="text-center p-3 glass rounded-lg">
+                                <p class="text-3xl font-bold text-primary dark:text-secondary">25+</p>
+                                <p class="text-sm">发展年限</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass rounded-lg p-4 h-fit"><h3 class="text-xl font-semibold mb-4 text-touhou dark:text-white">作品系列</h3><div class="max-h-96 overflow-y-auto pr-2 space-y-2"><div class="py-1 border-b border-gray-200 dark:border-gray-700">1. 东方灵梦传 - 东方Project第1作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">2. 东方封魔录 - 东方Project第2作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">3. 东方梦时空 - 东方Project第3作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">4. 东方幻想乡 - 东方Project第4.5作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">5. 东方怪绮谈 - 东方Project第5作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">6. 东方红魔乡 - 东方Project第6作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">7. 东方妖妖梦 - 东方Project第7作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">8. 东方萃梦想 - 东方Project第7.5作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">9. 东方永夜抄 - 东方Project第8作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">10. 东方花映冢 - 东方Project第9作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">11. 东方文花帖 - 东方Project第9.5作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">12. 东方风神录 - 东方Project第10作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">13. 东方绯想天 - 东方Project第10.5作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">14. 东方地灵殿 - 东方Project第11作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">15. 东方星莲船 - 东方Project第12作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">16. 东方非想天则 - 东方Project第12.3作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">17. 东方神灵庙 - 东方Project第13作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">18. 东方心绮楼 - 东方Project第13.5作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">19. 东方辉针城 - 东方Project第14作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">20. 东方深秘录 - 东方Project第14.5作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">21. 东方绀珠传 - 东方Project第15作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">22. 东方凭依华 - 东方Project第15.5作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">23. 东方天空璋 - 东方Project第16作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">24. 东方鬼形兽 - 东方Project第17作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">25. 东方刚欲异闻 - 东方Project第18作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">26. 东方刚欲异闻·被水淹没的沉愁地狱 - 东方Project第18.5作</div><div class="py-1 border-b border-gray-200 dark:border-gray-700">27. 东方兽王园 - 东方Project第19作</div><div class="py-1">28. 东方锦上京 - 东方Project第20作</div></div></div>
+                </div>
+            </div>
+
+            <!-- 经典角色展示 -->
+            <div class="mb-12" data-aos="fade-up" data-aos-delay="200">
+                <h2 class="text-3xl font-bold mb-8 text-center text-touhou dark:text-white font-touhou">经典角色</h2>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- 角色卡片1 -->
+                    <div class="glass rounded-xl overflow-hidden card-hover">
+                        <div class="img-loading aspect-[3/4]">
+                            <img src="image/PC98_Reimu.png" alt="博丽灵梦" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" loading="lazy">
+                        </div>
+                        <div class="p-4 text-center">
+                            <h3 class="text-xl font-bold text-touhou dark:text-secondary">博丽灵梦</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">博丽神社巫女</p>
+                        </div>
+                    </div>
+
+                    <!-- 角色卡片2 -->
+                    <div class="glass rounded-xl overflow-hidden card-hover">
+                        <div class="img-loading aspect-[3/4]">
+                            <img src="image/marisa.png" alt="雾雨魔理沙" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" loading="lazy">
+                        </div>
+                        <div class="p-4 text-center">
+                            <h3 class="text-xl font-bold text-touhou dark:text-secondary">雾雨魔理沙</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">魔法使</p>
+                        </div>
+                    </div>
+
+                    <!-- 角色卡片3 -->
+                    <div class="glass rounded-xl overflow-hidden card-hover">
+                        <div class="img-loading aspect-[3/4]">
+                            <img src="image/remilia.png" alt="蕾米莉亚·斯卡雷特" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" loading="lazy">
+                        </div>
+                        <div class="p-4 text-center">
+                            <h3 class="text-xl font-bold text-touhou dark:text-secondary">蕾米莉亚·斯卡雷特</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">红魔馆主人</p>
+                        </div>
+                    </div>
+
+                    <!-- 角色卡片4 -->
+                    <div class="glass rounded-xl overflow-hidden card-hover">
+                        <div class="img-loading aspect-[3/4]">
+                            <img src="image/flan.png" alt="西行寺幽幽子" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" loading="lazy">
+                        </div>
+                        <div class="p-4 text-center">
+                            <h3 class="text-xl font-bold text-touhou dark:text-secondary">西行寺幽幽子</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">红魔馆二小姐</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 图片展示区 -->
+            <section class="mb-16" data-aos="fade-up">
+                <h2 class="text-3xl font-bold mb-8 text-center text-touhou dark:text-white font-touhou">兔子画廊</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="gallery-item overflow-hidden rounded-lg shadow-md card-hover cursor-pointer">
+                        <img src="image/1.png" alt="东方Project插画" class="w-full h-64 object-cover transition-transform duration-500 hover:scale-110 img-loading" loading="lazy" data-img="image/1.png">
+                    </div>
+                    <div class="gallery-item overflow-hidden rounded-lg shadow-md card-hover cursor-pointer">
+                        <img src="image/3.png" alt="东方Project插画" class="w-full h-64 object-cover transition-transform duration-500 hover:scale-110 img-loading" loading="lazy" data-img="image/3.png">
+                    </div>
+                    <div class="gallery-item overflow-hidden rounded-lg shadow-md card-hover cursor-pointer">
+                        <img src="image/4.png" alt="东方Project插画" class="w-full h-64 object-cover transition-transform duration-500 hover:scale-110 img-loading" loading="lazy" data-img="image/4.png">
+                    </div>
+                    <div class="gallery-item overflow-hidden rounded-lg shadow-md card-hover cursor-pointer">
+                        <img src="image/7.png" alt="东方Project插画" class="w-full h-64 object-cover transition-transform duration-500 hover:scale-110 img-loading" loading="lazy" data-img="image/7.png">
+                    </div>
+                    <div class="gallery-item overflow-hidden rounded-lg shadow-md card-hover cursor-pointer">
+                        <img src="image/8.png" alt="东方Project插画" class="w-full h-64 object-cover transition-transform duration-500 hover:scale-110 img-loading" loading="lazy" data-img="image/8.png">
+                    </div>
+                    <div class="gallery-item overflow-hidden rounded-lg shadow-md card-hover cursor-pointer">
+                        <img src="image/10.png" alt="东方Project插画" class="w-full h-64 object-cover transition-transform duration-500 hover:scale-110 img-loading" loading="lazy" data-img="image/10.png">
+                    </div>
+                </div>
+            </section>
+
+            <!-- 网站功能模块 -->
+            <section class="mb-16" data-aos="fade-up" data-aos-delay="300">
+                <h2 class="text-3xl font-bold mb-8 text-center text-touhou dark:text-white font-touhou">网站导航</h2>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- 功能卡片1 -->
+                    <a href="#" class="glass rounded-xl p-6 text-center card-hover flex flex-col items-center justify-center h-full transition-colors hover:bg-white/20 dark:hover:bg-dark-100/30">
+                        <div class="w-16 h-16 rounded-full bg-primary/20 dark:bg-secondary/20 flex items-center justify-center mb-4">
+                            <i class="fa fa-home text-2xl text-primary dark:text-secondary"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">首页</h3>
+                        <p class="text-gray-600 dark:text-gray-400">了解东方Project与网站概况</p>
+                    </a>
+
+                    <!-- 功能卡片2 -->
+                    <a href="opengl-tutorial.html" class="glass rounded-xl p-6 text-center card-hover flex flex-col items-center justify-center h-full transition-colors hover:bg-white/20 dark:hover:bg-dark-100/30">
+                        <div class="w-16 h-16 rounded-full bg-primary/20 dark:bg-secondary/20 flex items-center justify-center mb-4">
+                            <i class="fa fa-code text-2xl text-primary dark:text-secondary"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">OpenGL教程</h3>
+                        <p class="text-gray-600 dark:text-gray-400">从基础到进阶的图形学教程</p>
+                    </a>
+
+                    <!-- 功能卡片3 -->
+                    <a href="music.html" class="glass rounded-xl p-6 text-center card-hover flex flex-col items-center justify-center h-full transition-colors hover:bg-white/20 dark:hover:bg-dark-100/30">
+                        <div class="w-16 h-16 rounded-full bg-primary/20 dark:bg-secondary/20 flex items-center justify-center mb-4">
+                            <i class="fa fa-music text-2xl text-primary dark:text-secondary"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">音乐</h3>
+                        <p class="text-gray-600 dark:text-gray-400">东方Project同人音乐合集</p>
+                    </a>
+
+                    <!-- 功能卡片4 -->
+                    <a href="gameDownload.html" class="glass rounded-xl p-6 text-center card-hover flex flex-col items-center justify-center h-full transition-colors hover:bg-white/20 dark:hover:bg-dark-100/30">
+                        <div class="w-16 h-16 rounded-full bg-primary/20 dark:bg-secondary/20 flex items-center justify-center mb-4">
+                            <i class="fa fa-download text-2xl text-primary dark:text-secondary"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">下载</h3>
+                        <p class="text-gray-600 dark:text-gray-400">游戏资源与工具下载</p>
+                    </a>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="glass py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-3 gap-8 mb-6">
+                <div class="text-center md:text-left">
+                    <div class="flex items-center justify-center md:justify-start space-x-2 mb-4">
+                        <img src="image/icon.png" alt="兔子站图标" class="w-10 h-10 rounded-full">
+                        <span class="text-xl font-bold text-primary dark:text-secondary font-touhou">兔子站</span>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400 max-w-xs mx-auto md:mx-0">
+                        以东方Project为核心的文化与技术分享平台，致力于传播同人文化与编程知识。
+                    </p>
+                </div>
+
+                <div class="text-center">
+                    <h3 class="text-lg font-bold mb-4">快速链接</h3>
+                    <div class="grid grid-cols-2 gap-2 max-w-xs mx-auto">
+                        <a href="#" class="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-secondary transition-colors">首页</a>
+                        <a href="opengl-tutorial.html" class="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-secondary transition-colors">OpenGL教程</a>
+                        <a href="music.html" class="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-secondary transition-colors">音乐</a>
+                        <a href="gameDownload.html" class="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-secondary transition-colors">下载</a>
+                    </div>
+                </div>
+
+                <div class="text-center md:text-right">
+                    <h3 class="text-lg font-bold mb-4">联系我们</h3>
+                    <div class="flex justify-center md:justify-end space-x-4 mb-4">
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/30 dark:bg-dark-100 flex items-center justify-center hover:bg-primary/50 dark:hover:bg-secondary/50 transition-colors">
+                            <i class="fa fa-github text-gray-700 dark:text-gray-300"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/30 dark:bg-dark-100 flex items-center justify-center hover:bg-primary/50 dark:hover:bg-secondary/50 transition-colors">
+                            <i class="fa fa-twitter text-gray-700 dark:text-gray-300"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/30 dark:bg-dark-100 flex items-center justify-center hover:bg-primary/50 dark:hover:bg-secondary/50 transition-colors">
+                            <i class="fa fa-envelope text-gray-700 dark:text-gray-300"></i>
+                        </a>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        欢迎交流与合作
+                    </p>
+                </div>
+            </div>
+
+            <hr class="border-gray-300 dark:border-dark-100 mb-6">
+
+            <div class="text-center">
+                <a href="https://icp.gov.moe/?keyword=20251045" target="_blank" class="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors">萌ICP备20251045号</a>
+                <p class="text-gray-600 dark:text-gray-400 mt-2">
+                    © 2025 兔子站 版权所有
+                </p>
+                <p class="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                    本网站仅供学习和演示使用，所有内容均来自网络，如有侵权请联系删除
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 图片预览模态框 -->
+    <div id="image-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <button id="close-modal" class="absolute top-4 right-4 text-white text-3xl hover:text-gray-300 transition-colors">
+            <i class="fa fa-times"></i>
+        </button>
+        <img id="preview-image" src="" alt="图片预览" class="max-w-full max-h-[90vh] object-contain rounded-lg animate-scale">
+    </div>
+
+    <!-- 回到顶部按钮 -->
+    <button id="back-to-top" class="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-primary dark:bg-secondary text-white flex items-center justify-center shadow-lg opacity-0 invisible transition-all duration-300 hover:bg-primary/90 dark:hover:bg-secondary/90">
+        <i class="fa fa-arrow-up"></i>
+    </button>
+
+    <script>
+        // 初始化 AOS 动画库
+        document.addEventListener('DOMContentLoaded', function () {
+            AOS.init({
+                duration: 800,
+                easing: 'ease-in-out',
+                once: true
+            });
+
+            // 主题切换逻辑
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+
+            const themeToggle = document.getElementById('theme-toggle');
+            themeToggle.addEventListener('click', function () {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.theme = isDark ? 'dark' : 'light';
+            });
+
+            // 导航链接样式统一
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.classList.add('px-3', 'py-2', 'rounded-md', 'text-sm', 'font-medium', 'hover:bg-gray-200', 'dark:hover:bg-dark-100', 'transition-colors');
+
+                // 高亮当前页面链接
+                if (link.getAttribute('href') === window.location.pathname || (link.getAttribute('href') === '#' && window.location.pathname === '/')) {
+                    link.classList.add('bg-primary/20', 'text-primary', 'dark:bg-secondary/20', 'dark:text-secondary');
+                }
+            });
+
+            // 移动端菜单逻辑
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            mobileMenuBtn.addEventListener('click', function () {
+                mobileMenu.classList.toggle('hidden');
+                const icon = mobileMenuBtn.querySelector('i');
+                if (mobileMenu.classList.contains('hidden')) {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                } else {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
+                }
+            });
+
+            // 导航栏滚动效果
+            const mainNav = document.getElementById('main-nav');
+            window.addEventListener('scroll', function () {
+                if (window.scrollY > 50) {
+                    mainNav.classList.add('nav-scrolled');
+                } else {
+                    mainNav.classList.remove('nav-scrolled');
+                }
+            });
+
+            // 回到顶部按钮
+            const backToTopBtn = document.getElementById('back-to-top');
+            window.addEventListener('scroll', function () {
+                if (window.scrollY > 300) {
+                    backToTopBtn.classList.remove('opacity-0', 'invisible');
+                    backToTopBtn.classList.add('opacity-100', 'visible');
+                } else {
+                    backToTopBtn.classList.add('opacity-0', 'invisible');
+                    backToTopBtn.classList.remove('opacity-100', 'visible');
+                }
+            });
+
+            backToTopBtn.addEventListener('click', function () {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+
+            // 图片画廊预览功能
+            const galleryItems = document.querySelectorAll('.gallery-item img');
+            const imageModal = document.getElementById('image-modal');
+            const previewImage = document.getElementById('preview-image');
+            const closeModal = document.getElementById('close-modal');
+
+            galleryItems.forEach(item => {
+                item.addEventListener('click', function () {
+                    const imgSrc = this.getAttribute('data-img');
+                    previewImage.setAttribute('src', imgSrc);
+                    imageModal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                });
+            });
+
+            function hideModal() {
+                imageModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            closeModal.addEventListener('click', hideModal);
+            imageModal.addEventListener('click', function (e) {
+                if (e.target === imageModal) {
+                    hideModal();
+                }
+            });
+
+            // 键盘ESC关闭模态框
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && imageModal.classList.contains('active')) {
+                    hideModal();
+                }
+            });
+
+            // 图片加载失败处理
+            const images = document.querySelectorAll('img');
+            images.forEach(img => {
+                img.addEventListener('error', function () {
+                    this.src = 'image/default.png'; // 替换为默认图片路径
+                    this.alt = '图片加载失败';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
